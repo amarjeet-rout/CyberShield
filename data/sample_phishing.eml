@@ -1,0 +1,19 @@
+From: Bank Security <security@bank-example.test>
+To: customer@example.net
+Reply-To: support@unknown-example.test
+Subject: URGENT - Your account suspended
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Dear Customer,
+
+Your account suspended due to unusual activity.
+
+Verify your account immediately.
+Click here:
+http://bit.ly/account-verification
+
+Failure to confirm your password will result in account closure.
+
+Regards,
+Security Team
