@@ -2,11 +2,15 @@
 
 ### Context-Aware Phishing Investigation & Threat Intelligence Platform
 
-CyberShield is a Python-based defensive security platform designed to investigate suspicious emails, URLs, and domains. It combines heuristic analysis, DNS intelligence, IOC extraction, threat intelligence lookups, and explainable risk scoring in a Streamlit dashboard.
+CyberShield is a Python-based defensive cybersecurity platform designed to investigate suspicious emails, URLs, domains, and IP addresses.
 
-The project is being developed as a cybersecurity portfolio project.
+It combines heuristic analysis, DNS intelligence, IOC extraction and correlation, external threat intelligence, and explainable risk scoring in an interactive Streamlit dashboard.
 
-## Features
+The platform helps security analysts investigate potentially malicious indicators, understand their relationships, assess associated risks, and generate structured incident reports.
+
+---
+
+## 🚀 Key Features
 
 ### 1. Email Investigation
 - Parse raw emails and `.eml` files.
@@ -20,6 +24,7 @@ The project is being developed as a cybersecurity portfolio project.
 - Detect suspicious URL components and HTTP usage.
 - Identify potential brand impersonation.
 - Extract indicators of compromise.
+- Generate URL-specific risk assessments.
 
 ### 3. Domain Investigation
 - Validate and normalize domain names.
@@ -28,54 +33,81 @@ The project is being developed as a cybersecurity portfolio project.
 - Identify potentially suspicious domain characteristics.
 - Generate domain-specific risk assessments.
 
-### 4. Threat Intelligence
-- Optional VirusTotal lookups.
-- Optional URLhaus lookups.
-- Explicit selection of indicators before external lookup.
-- Support for URLs, domains, IP addresses, and file hashes.
+### 4. IP Address Investigation
+- Support IPv4 and IPv6 addresses.
+- Classify public, private, loopback, reserved, and link-local addresses.
+- Validate and normalize IP addresses.
+- Perform optional IP reputation checks.
+- Integrate VirusTotal and AbuseIPDB.
+- Analyze abuse confidence scores and report counts.
+- Incorporate threat intelligence findings into risk assessment.
 
-### 5. IOC Extraction and Correlation
+### 5. Threat Intelligence Integration
+- **VirusTotal:** Retrieve existing threat intelligence reports for supported indicators.
+- **URLhaus:** Check URLs against URLhaus intelligence.
+- **AbuseIPDB:** Retrieve IP reputation and abuse-report information.
+- Explicitly select indicators before performing external lookups.
+- Support URLs, domains, IP addresses, and file hashes where supported by the provider.
+
+### 6. IOC Extraction and Correlation
 - Extract URLs, domains, IPv4 addresses, and file hashes.
+- Identify relationships between extracted indicators.
 - Build IOC relationship graphs using NetworkX.
 - Visualize relationships using Plotly.
 
-### 6. Risk Assessment
+### 7. Risk Assessment
 - Evidence-based heuristic scoring.
 - Category-specific score limits.
+- Threat intelligence-based scoring.
 - Explainable findings and severity levels.
 - Risk classification: Low, Medium, and High.
 
-### 7. Incident Reporting
+### 8. MITRE ATT&CK Mapping
+- Map supported investigation evidence to relevant MITRE ATT&CK techniques.
+- Display technique IDs, tactics, confidence, and supporting evidence.
+- Avoid automatically assigning techniques without sufficient evidence.
+
+### 9. Incident Reporting
 - Generate JSON incident reports.
 - Generate Markdown incident reports.
 - Include investigation evidence and IOC information.
-- Provide potential MITRE ATT&CK technique mappings where supported by evidence.
+- Include risk assessments and potential MITRE ATT&CK mappings.
 
-## Technology Stack
+---
+
+## 🛠️ Technology Stack
 
 | Component | Technology |
 |---|---|
-| Programming language | Python |
+| Programming Language | Python |
 | Dashboard | Streamlit |
-| Data processing | Pandas |
-| DNS analysis | dnspython |
-| Domain parsing | tldextract |
-| IOC correlation | NetworkX |
+| Data Processing | Pandas |
+| DNS Analysis | dnspython |
+| Domain Parsing | tldextract |
+| IOC Correlation | NetworkX |
 | Visualization | Plotly |
-| HTTP requests | Requests |
-| Fuzzy matching | RapidFuzz |
-| Environment configuration | python-dotenv |
+| HTTP Requests | Requests |
+| Fuzzy Matching | RapidFuzz |
+| Environment Configuration | python-dotenv |
+| IP Validation | Python ipaddress |
 | Testing | Pytest |
+| Version Control | Git and GitHub |
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```text
 CyberShield/
+│
 ├── app.py
 ├── requirements.txt
 ├── README.md
 ├── .env.example
+├── .gitignore
+│
 ├── modules/
+│   ├── investigation.py
 │   ├── email_analyzer.py
 │   ├── header_analyzer.py
 │   ├── brand_detector.py
@@ -83,23 +115,33 @@ CyberShield/
 │   ├── url_investigation.py
 │   ├── domain_reputation.py
 │   ├── domain_investigation.py
+│   ├── ip_investigation.py
 │   ├── ioc_extractor.py
 │   ├── ioc_correlator.py
 │   ├── threat_intelligence.py
 │   ├── risk_scoring.py
-│   ├── investigation.py
 │   ├── mitre_mapping.py
 │   └── report_generator.py
+│
 ├── data/
 │   ├── sample_phishing.eml
 │   └── sample_legitimate.eml
+│
 ├── tests/
+│   ├── test_threat_intelligence.py
+│   ├── test_risk_scoring.py
+│   ├── test_ip_investigation.py
+│   └── ...
+│
 └── reports/
 ```
 
-## Installation
+---
+
+## ⚙️ Installation and Setup
 
 ### Prerequisites
+
 - Python 3.10 or later
 - Git
 - Internet connection for DNS and optional external intelligence lookups
@@ -107,7 +149,7 @@ CyberShield/
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone https://github.com/amarjeet-rout/CyberShield.git
 cd CyberShield
 ```
 
@@ -129,22 +171,25 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure optional API credentials
+### 4. Configure API credentials
 
-Create a `.env` file using the example:
+Create your local environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Add your API credentials:
+Add your API credentials to `.env`:
 
 ```env
 VT_API_KEY=your_virustotal_api_key
 URLHAUS_AUTH_KEY=your_urlhaus_auth_key
+ABUSEIPDB_API_KEY=your_abuseipdb_api_key
 ```
 
-These integrations are optional. Never commit your `.env` file or expose API credentials publicly.
+API integrations are optional. Configure only the providers you intend to use.
+
+**Security note:** Never commit `.env` or expose API credentials publicly. The `.env.example` file contains placeholders only.
 
 ### 5. Run CyberShield
 
@@ -158,17 +203,29 @@ Open the local address displayed in your terminal, usually:
 http://localhost:8501
 ```
 
-## Running Tests
+---
 
-Run the complete test suite:
+## 🧪 Running Tests
+
+Run the complete automated test suite:
 
 ```bash
 python -m pytest -v
 ```
 
-The current development version has **97 passing automated tests**.
+Alternatively:
 
-## Security and Limitations
+```bash
+python -m pytest -q
+```
+
+**Current test status: 118 tests passed.**
+
+The test suite covers investigation logic, IP classification, threat intelligence integration, and risk scoring.
+
+---
+
+## 🔐 Security and Limitations
 
 - CyberShield is intended for defensive security research and investigation.
 - Heuristic findings are indicators for analyst review, not definitive proof of malicious activity.
@@ -176,28 +233,45 @@ The current development version has **97 passing automated tests**.
 - DNS records and domain characteristics provide context but cannot independently establish malicious intent.
 - External intelligence lookups are optional and performed only for explicitly selected indicators.
 - VirusTotal lookups retrieve existing intelligence reports; the platform does not submit new files or scans.
+- Private and non-global IP addresses are not sent to external IP reputation providers.
 - MITRE ATT&CK mappings represent potential techniques based on available evidence, not confirmed attacker behavior.
 - Do not submit confidential or sensitive indicators to third-party services without authorization.
 
-## Current Development Status
+---
 
-| Investigation capability | Status |
+## 📊 Development Status
+
+| Investigation Capability | Status |
 |---|---|
 | Email Investigation | Implemented |
 | URL Investigation | Implemented |
 | Domain Investigation | Implemented |
-| IP Address Investigation | Planned |
-| File Hash Investigation | Planned |
+| IP Address Investigation | Implemented |
+| VirusTotal Integration | Implemented |
+| URLhaus Integration | Implemented |
+| AbuseIPDB Integration | Implemented |
+| IOC Extraction and Correlation | Implemented |
+| Risk Assessment | Implemented |
+| MITRE ATT&CK Mapping | Implemented |
+| Incident Reporting | Implemented |
 
-## Future Enhancements
+---
 
-- IP address investigation and reputation analysis.
-- File hash investigation.
-- Improved threat intelligence correlation.
+## 🔮 Future Enhancements
+
+- Standalone file hash investigation.
 - Investigation history and case management.
 - Batch indicator analysis.
-- Enhanced reporting and visualization.
+- Enhanced threat intelligence correlation.
+- Advanced reporting and visualization.
+- Improved investigation workflows.
 
-## Disclaimer
+---
+
+## ⚠️ Disclaimer
 
 CyberShield is an educational and defensive security research project. Its findings should be validated by a qualified security analyst before making operational security decisions.
+
+---
+
+**Developed as a cybersecurity portfolio project.**
