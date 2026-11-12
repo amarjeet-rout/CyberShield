@@ -179,3 +179,44 @@ def test_risk_level_high():
 
     assert result["risk_level"] == "High"
     assert result["risk_score"] >= 70
+def test_ip_analysis_category():
+    result = score_findings(
+        [
+            {
+                "type": "Suspicious IP",
+                "severity": "High",
+                "evidence": "IP has suspicious characteristics.",
+            }
+        ],
+        "ip_analysis",
+    )
+
+    assert result["category"] == "ip_analysis"
+    assert result["score"] == 10
+
+
+def test_abuseipdb_high_confidence():
+    result = score_threat_intelligence([
+        {
+            "provider": "AbuseIPDB",
+            "status": "success",
+            "abuse_confidence_score": 85,
+            "total_reports": 20,
+        }
+    ])
+
+    assert result["score"] == 10
+    assert len(result["evidence"]) == 1
+
+
+def test_abuseipdb_medium_confidence():
+    result = score_threat_intelligence([
+        {
+            "provider": "AbuseIPDB",
+            "status": "success",
+            "abuse_confidence_score": 40,
+            "total_reports": 5,
+        }
+    ])
+
+    assert result["score"] == 5

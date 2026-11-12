@@ -223,12 +223,12 @@ def lookup_urlhaus(value):
             "message": "The provider returned an invalid response.",
         }
 
-
 def lookup_indicator(indicator_type, value):
     """
-    Perform optional reputation lookups for a user-selected indicator.
+    Perform optional reputation lookups for a selected indicator.
 
-    Only the explicitly supplied indicator is sent to external providers.
+    External lookups are performed only for explicitly
+    selected indicators.
     """
     normalized = validate_indicator(indicator_type, value)
 
@@ -238,13 +238,128 @@ def lookup_indicator(indicator_type, value):
         "providers": [],
     }
 
+    # For IPs, never submit non-public addresses externally.
+    if indicator_type == "ip":
+        address = ipaddress.ip_address(normalized)
+
+        if not address.is_global:
+            results["providers"].extend([
+                {
+                    "provider": "VirusTotal",
+                    "status": "skipped",
+                    "message": "External lookup skipped for non-public IP.",
+                },
+                {
+                    "provider": "AbuseIPDB",
+                    "status": "skipped",
+                    "message": "External lookup skipped for non-public IP.",
+                },
+            ])
+            return results
+
+    # Existing VirusTotal integration.
     results["providers"].append(
         lookup_virustotal(indicator_type, normalized)
     )
 
+    # New AbuseIPDB integration for public IPs.
+    if indicator_type == "ip":
+        results["providers"].append(
+            lookup_abuseipdb(normalized)
+        )
+
+    # Existing URLhaus integration.
     if indicator_type == "url":
         results["providers"].append(
             lookup_urlhaus(normalized)
         )
 
     return results
+def lookup_abuseipdb(value):
+    """Check a public IP address against AbuseIPDB."""
+
+    api_key = os.getenv("ABUSEIPDB_API_KEY")
+
+    if not api_key:
+        return {
+            "provider": "AbuseIPDB",
+            "status": "not_configured",
+            "message": "ABUSEIPDB_API_KEY is not configured.",
+        }
+
+    try:
+        address = ipaddress.ip_address(value)
+
+        if not address.is_global:
+            return {
+                "provider": "AbuseIPDB",
+                "status": "skipped",
+                "message": "External lookup skipped for non-public IP.",
+            }
+
+    except ValueError:
+        return {
+            "provider": "AbuseIPDB",
+            "status": "error",
+            "message": "Invalid IP address.",
+        }
+
+    headers = {
+        "Key": api_key,
+        "Accept": "application/json",
+    }
+
+    params = {
+        "ipAddress": str(address),
+        "maxAgeInDays": 90,
+    }
+
+    try:
+        response = requests.get(
+            "https://api.abuseipdb.com/api/v2/check",
+            headers=headers,
+            params=params,
+            timeout=TIMEOUT,
+        )
+
+        response.raise_for_status()
+        data = response.json().get("data", {})
+
+        return {
+            "provider": "AbuseIPDB",
+            "status": "success",
+            "ip_address": data.get("ipAddress"),
+            "abuse_confidence_score": data.get(
+                "abuseConfidenceScore", 0
+            ),
+            "total_reports": data.get("totalReports", 0),
+            "distinct_users": data.get("numDistinctUsers", 0),
+            "last_reported_at": data.get("lastReportedAt"),
+            "country_code": data.get("countryCode"),
+            "isp": data.get("isp"),
+            "domain": data.get("domain"),
+            "usage_type": data.get("usageType"),
+            "is_tor": data.get("isTor", False),
+            "is_whitelisted": data.get("isWhitelisted"),
+        }
+
+    except requests.Timeout:
+        return {
+            "provider": "AbuseIPDB",
+            "status": "error",
+            "message": "The request timed out.",
+        }
+
+    except requests.RequestException as error:
+        return {
+            "provider": "AbuseIPDB",
+            "status": "error",
+            "message": f"Request failed: {error}",
+        }
+
+    except (ValueError, TypeError, AttributeError):
+        return {
+            "provider": "AbuseIPDB",
+            "status": "error",
+            "message": "The provider returned an invalid response.",
+        }

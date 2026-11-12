@@ -5,6 +5,7 @@ import networkx as nx
 import plotly.graph_objects as go
 import streamlit as st
 
+from modules.ip_investigation import investigate_ip
 from modules.investigation import investigate_email
 from modules.url_investigation import investigate_url
 from modules.domain_investigation import investigate_domain
@@ -62,6 +63,7 @@ mode = st.radio(
         "Email Investigation",
         "URL Investigation",
         "Domain Investigation",
+	"IP Address Investigation",
     ],
     horizontal=True,
 )
@@ -69,6 +71,7 @@ mode = st.radio(
 is_email = mode == "Email Investigation"
 is_url = mode == "URL Investigation"
 is_domain = mode == "Domain Investigation"
+is_ip = mode == "IP Address Investigation"
 
 
 # --------------------------------------------------
@@ -173,7 +176,7 @@ elif is_url:
 # DOMAIN INPUT
 # --------------------------------------------------
 
-else:
+elif is_domain:
 
     st.header("1. Domain Investigation")
 
@@ -217,7 +220,54 @@ else:
 
         except Exception as error:
             st.error(f"Investigation failed: {error}")
+# --------------------------------------------------
+# IP ADDRESS INPUT
+# --------------------------------------------------
 
+elif is_ip:
+
+    st.header("1. IP Address Investigation")
+
+    st.markdown(
+        """
+        Investigate IPv4 and IPv6 addresses, identify their
+        network classification, and optionally check public IP
+        reputation using threat intelligence providers.
+        """
+    )
+
+    with st.form("ip_investigation_form"):
+
+        submitted_ip = st.text_input(
+            "Enter the IP address",
+            placeholder="8.8.8.8",
+        )
+
+        analyze_ip_button = st.form_submit_button(
+            "Analyze IP Address",
+            type="primary",
+            use_container_width=True,
+        )
+
+    if analyze_ip_button:
+
+        try:
+            if not submitted_ip.strip():
+                st.error("Please enter an IP address.")
+
+            else:
+                with st.spinner("Investigating IP address..."):
+
+                    result = investigate_ip(submitted_ip)
+
+                    st.session_state.investigation = result
+                    st.session_state.investigation_mode = mode
+                    st.session_state.investigation_input = submitted_ip
+
+                st.success("IP address investigation completed.")
+
+        except Exception as error:
+            st.error(f"Investigation failed: {error}")
 
 # --------------------------------------------------
 # DISPLAY INVESTIGATION RESULTS
@@ -280,7 +330,6 @@ if (
     st.progress(score / 100)
 
     st.info(risk.get("explanation", ""))
-
     # --------------------------------------------------
     # RISK BREAKDOWN
     # --------------------------------------------------
@@ -293,6 +342,7 @@ if (
         "url_structure": "URL Structure",
         "brand_impersonation": "Brand Impersonation",
         "domain_analysis": "Domain Analysis",
+        "ip_analysis": "IP Analysis",
         "threat_intelligence": "Threat Intelligence",
     }
 
@@ -314,10 +364,17 @@ if (
             "threat_intelligence",
         ]
 
-    else:
+    elif is_domain:
 
         visible_categories = [
             "domain_analysis",
+            "threat_intelligence",
+        ]
+
+    else:
+
+        visible_categories = [
+            "ip_analysis",
             "threat_intelligence",
         ]
 
@@ -379,8 +436,6 @@ if (
                         f"Finding score: {finding['score']}"
                     )
 
-                st.divider()
-
     # --------------------------------------------------
     # EMAIL-SPECIFIC ANALYSIS
     # --------------------------------------------------
@@ -417,7 +472,7 @@ if (
     # DOMAIN ANALYSIS
     # --------------------------------------------------
 
-    else:
+    elif is_domain:
 
         st.divider()
         st.header("3. Domain and DNS Analysis")
@@ -495,6 +550,63 @@ if (
             "DNS records and domain characteristics are contextual "
             "evidence. Their absence or presence alone does not prove "
             "that a domain is malicious."
+        )
+
+    # --------------------------------------------------
+    # IP ADDRESS ANALYSIS
+    # --------------------------------------------------
+
+    else:
+
+        st.divider()
+        st.header("3. IP Address Analysis")
+
+        ip_result = investigation.get("ip_analysis", {})
+
+        st.write("**Investigated IP address:**")
+        st.code(investigation.get("input", ""), language=None)
+
+        st.subheader("IP Address Properties")
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric(
+            "IP Version",
+            f"IPv{ip_result.get('version', 'Unknown')}",
+        )
+
+        col2.metric(
+            "Classification",
+            ip_result.get("classification", "Unknown"),
+        )
+
+        col3.metric(
+            "Global Address",
+            "Yes" if ip_result.get("is_global") else "No",
+        )
+
+        property_columns = st.columns(3)
+
+        properties = [
+            ("Private", "is_private"),
+            ("Loopback", "is_loopback"),
+            ("Reserved", "is_reserved"),
+            ("Link-local", "is_link_local"),
+        ]
+
+        for index, (label, key) in enumerate(properties):
+            property_columns[index % 3].write(
+                f"**{label}:** "
+                f"{'Yes' if ip_result.get(key) else 'No'}"
+            )
+
+        with st.expander("Complete IP analysis details"):
+            st.json(ip_result)
+
+        st.caption(
+            "IP classification describes network address properties. "
+            "A public IP address is not necessarily malicious, and "
+            "a private IP address is not externally reputation-checked."
         )
 
     # --------------------------------------------------
@@ -720,6 +832,7 @@ if (
         "evidence, not confirmation of an attack."
     )
 
+
     # --------------------------------------------------
     # OPTIONAL THREAT INTELLIGENCE
     # --------------------------------------------------
@@ -796,9 +909,16 @@ if (
                                 selected_lookups=selected_lookups,
                             )
 
-                        else:
+                        elif is_domain:
 
                             updated_investigation = investigate_domain(
+                                st.session_state.investigation_input,
+                                selected_lookups=selected_lookups,
+                            )
+
+                        else:
+
+                            updated_investigation = investigate_ip(
                                 st.session_state.investigation_input,
                                 selected_lookups=selected_lookups,
                             )
@@ -819,12 +939,88 @@ if (
     else:
         st.info("No indicators are available for external lookup.")
 
+    # --------------------------------------------------
+    # DISPLAY THREAT INTELLIGENCE RESULTS
+    # --------------------------------------------------
+
     providers = investigation.get("threat_intelligence", [])
 
     if providers:
 
-        with st.expander("External lookup results"):
-            st.json(providers)
+        with st.expander("External lookup results", expanded=True):
+
+            for provider in providers:
+
+                provider_name = provider.get(
+                    "provider",
+                    "Unknown Provider",
+                )
+
+                status = provider.get("status", "unknown")
+
+                st.markdown(f"### {provider_name}")
+
+                st.write("**Status:**", status)
+
+                if provider_name == "AbuseIPDB" and status == "success":
+
+                    col1, col2, col3 = st.columns(3)
+
+                    col1.metric(
+                        "Abuse Confidence",
+                        f"{provider.get('abuse_confidence_score', 0)}%",
+                    )
+
+                    col2.metric(
+                        "Total Reports",
+                        provider.get("total_reports", 0),
+                    )
+
+                    col3.metric(
+                        "Distinct Reporters",
+                        provider.get("distinct_users", 0),
+                    )
+
+                    st.write(
+                        "**Country:**",
+                        provider.get("country_code") or "Unknown",
+                    )
+
+                    st.write(
+                        "**ISP:**",
+                        provider.get("isp") or "Unknown",
+                    )
+
+                    st.write(
+                        "**Domain:**",
+                        provider.get("domain") or "Unknown",
+                    )
+
+                    st.write(
+                        "**Usage Type:**",
+                        provider.get("usage_type") or "Unknown",
+                    )
+
+                    st.write(
+                        "**Last Reported:**",
+                        provider.get("last_reported_at") or "Unknown",
+                    )
+
+                    st.write(
+                        "**Tor Exit Node:**",
+                        "Yes" if provider.get("is_tor") else "No",
+                    )
+
+                    st.write(
+                        "**Whitelisted:**",
+                        "Yes" if provider.get("is_whitelisted") else "No",
+                    )
+
+                else:
+
+                    st.json(provider)
+
+                st.divider()
 
     # --------------------------------------------------
     # INCIDENT REPORT DOWNLOADS

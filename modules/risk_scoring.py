@@ -6,6 +6,7 @@ CATEGORY_CAPS = {
     "url_structure": 25,
     "brand_impersonation": 10,
     "domain_analysis": 25,
+    "ip_analysis": 20,
     "threat_intelligence": 10,
 }
 
@@ -97,6 +98,31 @@ def score_threat_intelligence(provider_results):
                 "severity": "High",
                 "evidence": "The URL is listed in URLhaus.",
             })
+        elif provider == "AbuseIPDB" and status == "success":
+            confidence = result.get("abuse_confidence_score", 0)
+
+            if isinstance(confidence, (int, float)) and not isinstance(confidence, bool):
+                if confidence >= 75:
+                    scores.append(10)
+                    severity = "High"
+                elif confidence >= 25:
+                    scores.append(5)
+                    severity = "Medium"
+                elif confidence > 0:
+                    scores.append(2)
+                    severity = "Low"
+                else:
+                    continue
+
+                evidence.append({
+                    "provider": provider,
+                    "severity": severity,
+                    "evidence": (
+                        f"AbuseIPDB reports an abuse confidence "
+                        f"score of {confidence}/100 across "
+                        f"{result.get('total_reports', 0)} reports."
+                    ),
+                })
 
     return {
         "category": "threat_intelligence",
