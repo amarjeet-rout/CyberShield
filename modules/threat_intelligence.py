@@ -3,13 +3,27 @@ import ipaddress
 import os
 
 import requests
+import streamlit as st
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
-VT_API_KEY = os.getenv("VT_API_KEY")
-URLHAUS_AUTH_KEY = os.getenv("URLHAUS_AUTH_KEY")
+def get_api_key(name):
+    """Load an API key from environment variables or Streamlit secrets."""
+    value = os.getenv(name)
+
+    if value:
+        return value
+
+    try:
+        return st.secrets.get(name)
+    except Exception:
+        return None
+
+
+VT_API_KEY = get_api_key("VT_API_KEY")
+URLHAUS_AUTH_KEY = get_api_key("URLHAUS_AUTH_KEY")
 
 VT_BASE_URL = "https://www.virustotal.com/api/v3"
 URLHAUS_URL_ENDPOINT = "https://urlhaus-api.abuse.ch/v1/url/"
@@ -278,7 +292,7 @@ def lookup_indicator(indicator_type, value):
 def lookup_abuseipdb(value):
     """Check a public IP address against AbuseIPDB."""
 
-    api_key = os.getenv("ABUSEIPDB_API_KEY")
+    api_key = get_api_key("ABUSEIPDB_API_KEY")
 
     if not api_key:
         return {
