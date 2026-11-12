@@ -20,22 +20,443 @@ from modules.report_generator import (
 # --------------------------------------------------
 
 st.set_page_config(
-    page_title="CyberShield | Security Investigation",
+    page_title="CyberShield | Threat Intelligence",
     page_icon="🛡️",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.title("🛡️ CyberShield")
-st.caption(
-    "Context-Aware Phishing Investigation & Threat Intelligence Platform"
-)
+
+# --------------------------------------------------
+# DEEP NAVY + TEAL THEME
+# --------------------------------------------------
 
 st.markdown(
     """
-    Investigate suspicious emails, URLs and domains, identify
-    potentially malicious indicators, correlate indicators of
-    compromise, and generate incident reports.
+    <style>
+
+    :root {
+        --bg: #071923;
+        --sidebar: #0B202B;
+        --surface: #102A36;
+        --surface-hover: #174653;
+        --teal: #2DD4BF;
+        --text: #D9F3F0;
+        --muted: #91B7B8;
+        --danger: #F43F5E;
+        --warning: #F59E0B;
+        --success: #4ADE80;
+    }
+
+    /* MAIN BACKGROUND */
+
+    .stApp {
+        background:
+            radial-gradient(circle at 85% 15%,
+                rgba(45,212,191,0.08), transparent 28%),
+            linear-gradient(135deg,#071923,#09232E,#071923);
+        color: #D9F3F0;
+    }
+
+    [data-testid="stHeader"] {
+        background: transparent;
+    }
+
+    .block-container {
+        max-width: 1450px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* SUBTLE TECHNOLOGY BACKGROUND */
+
+    .stApp::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.18;
+        background-image:
+            radial-gradient(circle, #2DD4BF 1px, transparent 2px),
+            linear-gradient(90deg,
+                transparent 49.8%,
+                rgba(45,212,191,0.08) 50%,
+                transparent 50.2%);
+        background-size: 85px 85px, 120px 120px;
+    }
+
+    .block-container {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* SIDEBAR */
+
+    [data-testid="stSidebar"] {
+        background: #0B202B;
+        border-right: 1px solid #174653;
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #D9F3F0;
+    }
+
+    /* HEADINGS */
+
+    h1, h2, h3 {
+        color: #D9F3F0 !important;
+        font-weight: 650;
+    }
+
+    p, label, .stMarkdown {
+        color: #C4DEDC;
+    }
+
+    /* METRIC CARDS */
+
+    [data-testid="stMetric"] {
+        background: #102A36;
+        border: 1px solid #174653;
+        border-radius: 12px;
+        padding: 18px;
+        transition: border 0.2s ease;
+    }
+
+    [data-testid="stMetric"]:hover {
+        border-color: #2DD4BF;
+    }
+
+    [data-testid="stMetricLabel"] {
+        color: #91B7B8 !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        color: #2DD4BF !important;
+    }
+
+    /* FORMS */
+
+    div[data-testid="stForm"] {
+        background: rgba(16,42,54,0.94);
+        border: 1px solid #174653;
+        border-radius: 14px;
+        padding: 22px;
+    }
+
+    /* INPUT FIELDS */
+
+    .stTextInput input,
+    .stTextArea textarea,
+    .stNumberInput input {
+        background: #0B202B !important;
+        color: #D9F3F0 !important;
+        border: 1px solid #286273;
+        border-radius: 8px;
+    }
+
+    .stTextInput input:focus,
+    .stTextArea textarea:focus {
+        border-color: #2DD4BF;
+        box-shadow: 0 0 0 1px #2DD4BF;
+    }
+
+    /* SELECT BOXES */
+
+    [data-baseweb="select"] > div {
+        background: #102A36;
+        border-color: #286273;
+        color: #D9F3F0;
+    }
+
+    /* PRIMARY INVESTIGATION BUTTONS */
+
+    [data-testid="stFormSubmitButton"] button,
+    .stFormSubmitButton button[kind="primary"],
+    .stButton button[kind="primary"] {
+        background: #2DD4BF !important;
+        color: #06232C !important;
+        -webkit-text-fill-color: #06232C !important;
+        border: 1px solid #2DD4BF !important;
+        border-radius: 10px !important;
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        min-height: 46px;
+        box-shadow: 0 0 14px rgba(45,212,191,0.20);
+        transition: all 0.2s ease;
+    }
+
+    [data-testid="stFormSubmitButton"] button:hover,
+    .stFormSubmitButton button[kind="primary"]:hover,
+    .stButton button[kind="primary"]:hover {
+        background: #5EEAD4 !important;
+        color: #041C25 !important;
+        -webkit-text-fill-color: #041C25 !important;
+        box-shadow: 0 0 22px rgba(45,212,191,0.45);
+        transform: translateY(-1px);
+    }
+
+    /* SECONDARY BUTTONS */
+
+    .stButton button,
+    .stFormSubmitButton button {
+        border-radius: 9px;
+        font-weight: 650;
+        transition: all 0.2s ease;
+    }
+
+    /* RADIO CONTROLS */
+
+    div[role="radiogroup"] {
+        background: #102A36;
+        border: 1px solid #174653;
+        border-radius: 12px;
+        padding: 12px 16px;
+    }
+
+    /* ALERTS */
+
+    [data-testid="stAlert"] {
+        border-radius: 10px;
+    }
+
+    /* THREAT SEVERITY */
+
+    .threat-critical {
+        color: #F43F5E;
+        font-weight: 700;
+    }
+
+    .threat-warning {
+        color: #F59E0B;
+        font-weight: 700;
+    }
+
+    .threat-safe {
+        color: #4ADE80;
+        font-weight: 700;
+    }
+
+    /* TABLES */
+
+    [data-testid="stDataFrame"] {
+        border: 1px solid #174653;
+        border-radius: 10px;
+    }
+
+    /* DIVIDERS */
+
+    hr {
+        border-color: #174653;
+    }
+
+    /* LINKS */
+
+    a {
+        color: #2DD4BF !important;
+    }
+
+    /* PROGRESS BARS */
+
+    .stProgress > div > div > div {
+        background-color: #2DD4BF;
+    }
+
+    /* TECHNOLOGY HEADER */
+
+    .cyber-header {
+        position: relative;
+        overflow: hidden;
+        min-height: 190px;
+        display: flex;
+        align-items: center;
+        background:
+            radial-gradient(circle at 80% 45%,
+                rgba(45,212,191,0.20), transparent 24%),
+            radial-gradient(circle at 75% 50%,
+                rgba(23,70,83,0.75), transparent 48%),
+            linear-gradient(110deg,#102A36,#071923);
+        border: 1px solid #286273;
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 22px;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .header-eyebrow {
+        color: #91B7B8;
+        font-size: 12px;
+        letter-spacing: 2px;
+        font-weight: 700;
+    }
+
+    .cyber-header h1 {
+        color: #D9F3F0 !important;
+        font-size: 38px;
+        margin: 10px 0;
+    }
+
+    .cyber-header h1 span {
+        color: #2DD4BF;
+    }
+
+    .cyber-header p {
+        color: #B8D8D5;
+        font-size: 15px;
+        margin: 0;
+    }
+
+    /* DIGITAL EARTH */
+
+    .digital-globe {
+        position: absolute;
+        right: 7%;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 190px;
+        height: 190px;
+        border-radius: 50%;
+        border: 1px solid rgba(45,212,191,0.8);
+        background:
+            repeating-radial-gradient(
+                circle,
+                transparent 0 15px,
+                rgba(45,212,191,0.12) 16px 17px
+            ),
+            repeating-linear-gradient(
+                0deg,
+                transparent 0 13px,
+                rgba(45,212,191,0.16) 14px 15px
+            ),
+            radial-gradient(
+                circle at 35% 35%,
+                #174653,
+                #0B202B 65%,
+                #071923
+            );
+        box-shadow:
+            0 0 25px rgba(45,212,191,0.25),
+            inset -15px -10px 30px rgba(0,0,0,0.65);
+    }
+
+    .digital-globe::before,
+    .digital-globe::after {
+        content: "";
+        position: absolute;
+        inset: 20px 48px;
+        border: 1px solid rgba(45,212,191,0.45);
+        border-radius: 50%;
+    }
+
+    .digital-globe::after {
+        inset: 0 65px;
+    }
+
+    .header-network {
+        position: absolute;
+        right: 3%;
+        top: 10%;
+        width: 36%;
+        height: 80%;
+        opacity: 0.45;
+        pointer-events: none;
+        background-image:
+            radial-gradient(circle, #2DD4BF 2px, transparent 3px),
+            linear-gradient(35deg, transparent 48%, rgba(45,212,191,0.22) 49%, transparent 50%),
+            linear-gradient(145deg, transparent 48%, rgba(45,212,191,0.18) 49%, transparent 50%);
+        background-size: 75px 65px, 110px 90px, 130px 100px;
+        mask-image: linear-gradient(to right, transparent, black);
+    }
+
+    @media (max-width: 700px) {
+        .digital-globe {
+            opacity: 0.25;
+            right: -40px;
+        }
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# --------------------------------------------------
+# SIDEBAR
+# --------------------------------------------------
+
+with st.sidebar:
+    st.markdown(
+        """
+        <div style="text-align:center;padding:18px 5px 22px;">
+            <div style="font-size:42px;">🛡️</div>
+            <h2 style="color:#2DD4BF;margin:5px 0;">CyberShield</h2>
+            <p style="color:#91B7B8;font-size:11px;letter-spacing:1.5px;">
+                THREAT INTELLIGENCE PLATFORM
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.divider()
+    st.markdown("### Investigation")
+    st.markdown("📧 Email Investigation")
+    st.markdown("🔗 URL Investigation")
+    st.markdown("🌐 Domain Investigation")
+    st.markdown("📡 IP Address Investigation")
+
+    st.divider()
+    st.markdown("### System Status")
+    st.markdown(
+        """
+        <div style="background:#102A36;border:1px solid #286273;
+                    border-radius:10px;padding:14px;">
+            <p style="margin:0 0 12px;font-size:13px;">
+                <span style="color:#4ADE80;">●</span>
+                Investigation Engine
+                <span style="float:right;color:#4ADE80;">Ready</span>
+            </p>
+            <p style="margin:0;font-size:13px;">
+                <span style="color:#2DD4BF;">●</span>
+                Threat Intelligence
+                <span style="float:right;color:#91B7B8;">Optional</span>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.divider()
+    st.caption("CyberShield | Security Analysis")
+
+
+# --------------------------------------------------
+# APPLICATION HEADER
+# --------------------------------------------------
+
+st.markdown(
     """
+    <div class="cyber-header">
+        <div class="header-content">
+            <div class="header-eyebrow">SECURITY OPERATIONS CENTER</div>
+            <h1>🛡️ Cyber<span>Shield</span></h1>
+            <p>Context-Aware Phishing Investigation &amp; Threat Intelligence Platform</p>
+        </div>
+        <div class="digital-globe" aria-hidden="true"></div>
+        <div class="header-network" aria-hidden="true"></div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    "Investigate suspicious emails, URLs, domains and IP addresses. "
+    "Detect malicious indicators, correlate threat intelligence, "
+    "assess security risks and generate incident reports."
 )
 
 
@@ -63,7 +484,7 @@ mode = st.radio(
         "Email Investigation",
         "URL Investigation",
         "Domain Investigation",
-	"IP Address Investigation",
+        "IP Address Investigation",
     ],
     horizontal=True,
 )
@@ -160,7 +581,7 @@ elif is_url:
             else:
                 with st.spinner("Investigating URL..."):
 
-                    result = investigate_url(submitted_url)
+                    result = investigate_url(submitted_url,auto_lookup=True)
 
                     st.session_state.investigation = result
                     st.session_state.investigation_mode = mode
@@ -220,6 +641,7 @@ elif is_domain:
 
         except Exception as error:
             st.error(f"Investigation failed: {error}")
+
 # --------------------------------------------------
 # IP ADDRESS INPUT
 # --------------------------------------------------
@@ -268,6 +690,7 @@ elif is_ip:
 
         except Exception as error:
             st.error(f"Investigation failed: {error}")
+
 
 # --------------------------------------------------
 # DISPLAY INVESTIGATION RESULTS
@@ -330,6 +753,7 @@ if (
     st.progress(score / 100)
 
     st.info(risk.get("explanation", ""))
+
     # --------------------------------------------------
     # RISK BREAKDOWN
     # --------------------------------------------------
@@ -705,7 +1129,7 @@ if (
             y=edge_y,
             mode="lines",
             hoverinfo="none",
-            line=dict(width=1.5),
+            line=dict(width=1.5, color="#286273"),
         )
 
         node_x = []
@@ -714,10 +1138,10 @@ if (
         node_colors = []
 
         color_map = {
-            "URL": "#e74c3c",
-            "Domain": "#3498db",
-            "IP Address": "#2ecc71",
-            "File Hash": "#9b59b6",
+            "URL": "#F43F5E",
+            "Domain": "#2DD4BF",
+            "IP Address": "#4ADE80",
+            "File Hash": "#A78BFA",
         }
 
         for node, attributes in graph.nodes(data=True):
@@ -735,7 +1159,7 @@ if (
             )
 
             node_colors.append(
-                color_map.get(node_type, "#95a5a6")
+                color_map.get(node_type, "#91B7B8")
             )
 
         node_trace = go.Scatter(
@@ -752,8 +1176,9 @@ if (
             marker=dict(
                 size=18,
                 color=node_colors,
-                line=dict(width=1, color="white"),
+                line=dict(width=1, color="#D9F3F0"),
             ),
+            textfont=dict(color="#D9F3F0"),
         )
 
         figure = go.Figure(
@@ -767,6 +1192,9 @@ if (
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
             hovermode="closest",
+            paper_bgcolor="#102A36",
+            plot_bgcolor="#102A36",
+            font=dict(color="#D9F3F0"),
         )
 
         st.plotly_chart(
@@ -831,7 +1259,6 @@ if (
         "ATT&CK mappings are potential techniques based on available "
         "evidence, not confirmation of an attack."
     )
-
 
     # --------------------------------------------------
     # OPTIONAL THREAT INTELLIGENCE

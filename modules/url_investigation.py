@@ -16,7 +16,7 @@ def normalize_finding(finding):
     }
 
 
-def investigate_url(url, selected_lookups=None):
+def investigate_url(url, selected_lookups=None, auto_lookup=False):
     """
     Investigate a standalone URL.
 
@@ -54,7 +54,15 @@ def investigate_url(url, selected_lookups=None):
     # 5. Optional external threat intelligence
     provider_results = []
 
-    for item in selected_lookups:
+    if auto_lookup and not selected_lookups:
+        selected_lookups = [
+            {
+                "type": "url",
+                "value": url_result["url"],
+            }
+        ]
+
+    for item in selected_lookups or []:
 
         if not isinstance(item, dict):
             raise ValueError(
